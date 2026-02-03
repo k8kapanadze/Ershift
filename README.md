@@ -1,0 +1,115 @@
+
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <title>ექთნების მორიგეობის ცხრილი</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f7f6; }
+        .controls { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { border-collapse: collapse; background: white; width: 100%; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 5px; text-align: center; }
+        th { background: #2c3e50; color: white; position: sticky; top: 0; }
+        .name-col { position: sticky; left: 0; background: #ecf0f1; font-weight: bold; min-width: 150px; }
+        input[type="text"], select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        .total-cell { font-weight: bold; background: #e8f6f3; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn { background: #27ae60; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; }
+        .btn-fill { background: #2980b9; }
+        tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <h2>🏥 ემერჯენსის მორიგეობის მართვა</h2>
+    <div class="search-box">
+        <input type="text" id="searchName" placeholder="ძებნა სახელით..." onkeyup="filterTable()">
+        <input type="number" id="searchDate" placeholder="თარიღით (1-31)" onchange="filterDate()">
+        <button class="btn btn-fill" onclick="autoFillEveryFourth()">ავტომატური შევსება (ყოველ მე-4 დღეს)</button>
+    </div>
+</div>
+
+<div style="overflow-x: auto; max-height: 600px;">
+    <table id="scheduleTable">
+        <thead>
+            <tr id="headerRow">
+                <th class="name-col">ექთნის სახელი და გვარი</th>
+                <th>ჯამი (სთ)</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    const nurseCount = 51;
+    const daysInMonth = 31;
+    const tableBody = document.getElementById('tableBody');
+    const headerRow = document.getElementById('headerRow');
+
+    // თარიღების სვეტების შექმნა
+    for (let i = 1; i <= daysInMonth; i++) {
+        let th = document.createElement('th');
+        th.innerText = i;
+        headerRow.insertBefore(th, headerRow.lastElementChild);
+    }
+
+    // ექთნების მონაცემების გენერირება
+    for (let i = 1; i <= nurseCount; i++) {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td class="name-col" contenteditable="true">ექთანი ${i}</td>`;
+        
+        for (let j = 1; j <= daysInMonth; j++) {
+            tr.innerHTML += `<td>
+                <select onchange="calculateHours(this)">
+                    <option value="0">-</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="24">24</option>
+                </select>
+            </td>`;
+        }
+        tr.innerHTML += `<td class="total-cell">0</td>`;
+        tableBody.appendChild(tr);
+    }
+
+    // საათების დათვლის ფუნქცია
+    function calculateHours(el) {
+        let row = el.closest('tr');
+        let selects = row.querySelectorAll('select');
+        let total = 0;
+        selects.forEach(s => total += parseInt(s.value));
+        row.querySelector('.total-cell').innerText = total;
+    }
+
+    // ავტომატური შევსება (ყოველ მე-4 დღეს)
+    function autoFillEveryFourth() {
+        let rows = tableBody.querySelectorAll('tr');
+        rows.forEach(row => {
+            let selects = row.querySelectorAll('select');
+            // მაგალითისთვის: პირველი ექთანი იწყებს 1-ში, მეორე 2-ში და ა.შ.
+            let startDay = Math.floor(Math.random() * 4); 
+            for (let i = startDay; i < daysInMonth; i += 4) {
+                selects[i].value = "24";
+            }
+            calculateHours(selects[0]);
+        });
+    }
+
+    // ძებნა სახელით
+    function filterTable() {
+        let input = document.getElementById("searchName").value.toUpperCase();
+        let rows = tableBody.getElementsByTagName("tr");
+        for (let i = 0; i < rows.length; i++) {
+            let td = rows[i].getElementsByTagName("td")[0];
+            if (td) {
+                let textValue = td.textContent || td.innerText;
+                rows[i].style.display = textValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
