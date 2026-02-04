@@ -1,22 +1,17 @@
-<!DOCTYPE html>
+
 <html lang="ka">
 <head>
 <meta charset="UTF-8">
-<title>ექთნების მორიგეობის სისტემა</title>
+<title>ექთნების მორიგეობა</title>
 
 <style>
 body { font-family: sans-serif; padding: 20px; }
-table { border-collapse: collapse; margin-top: 15px; }
-th, td { border: 1px solid #666; padding: 4px; text-align: center; }
-.total-planned { background: #eee; font-weight: bold; }
-.total-real { background: #cfd8dc; font-weight: bold; }
-.real { font-size: 11px; color: #2e7d32; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #555; padding: 4px; text-align: center; }
+.planned { background: #f7f7f7; }
+.real-row { background: #d6d6d6; font-weight: bold; }
+.real-cell { color: #1b5e20; }
 section { margin-top: 25px; padding: 15px; border: 2px solid #333; }
-
-@media print {
-  button, section { display: none; }
-  select { appearance: none; border: none; }
-}
 </style>
 </head>
 
@@ -24,7 +19,7 @@ section { margin-top: 25px; padding: 15px; border: 2px solid #333; }
 
 <h2>ექთნების მორიგეობის სისტემა</h2>
 
-<select id="month" onchange="changeMonth()">
+<select id="monthSelect" onchange="render()">
   <option value="0">იანვარი</option>
   <option value="1">თებერვალი</option>
   <option value="2">მარტი</option>
@@ -39,187 +34,160 @@ section { margin-top: 25px; padding: 15px; border: 2px solid #333; }
   <option value="11">დეკემბერი</option>
 </select>
 
-<button onclick="window.print()">PDF ამობეჭდვა</button>
-
-<br><br>
-
 <input id="nurseName" placeholder="სახელი და გვარი">
-<button onclick="addNurse()">დამატება</button>
-<button onclick="autoGenerate()">ყოველ მე-4 დღეზე შევსება</button>
+<button onclick="addNurse()">ექთნის დამატება</button>
 
 <div id="tableContainer"></div>
 
 <section>
 <h3>რეალურად ნამუშევარი საათების დაფიქსირება</h3>
 <select id="attNurse"></select>
-<input id="attDay" type="number" min="1">
+<input type="number" id="attMonth" min="1" max="12" placeholder="თვე">
+<input type="number" id="attDay" min="1" placeholder="რიცხვი">
 <select id="attHours">
   <option value="8">8</option>
   <option value="16">16</option>
   <option value="24">24</option>
 </select>
-<button onclick="addAttendance()">ასახვა</button>
+<button onclick="addAttendance()">დაფიქსირება</button>
 </section>
 
 <section>
-<h3>გაცვლის დაფიქსირება</h3>
-<input id="swapDay" type="number" min="1">
+<h3>გაცვლა (ორი თარიღი)</h3>
 <select id="swapFrom"></select>
+<input type="number" id="fromMonth" placeholder="თვე">
+<input type="number" id="fromDay" placeholder="რიცხვი"><br><br>
+
 <select id="swapTo"></select>
+<input type="number" id="toMonth" placeholder="თვე">
+<input type="number" id="toDay" placeholder="რიცხვი"><br><br>
+
 <select id="swapHours">
   <option value="8">8</option>
   <option value="16">16</option>
   <option value="24">24</option>
 </select>
+
 <button onclick="addSwap()">გაცვლა</button>
 </section>
 
 <section>
-<h3>გაცვლის ისტორია</h3>
-<ul id="swapHistory"></ul>
+<h3>ძებნა</h3>
+<input id="searchName" placeholder="სახელი და გვარი">
+<button onclick="searchByName()">ძებნა სახელით</button><br><br>
+
+<input type="number" id="searchMonth" placeholder="თვე">
+<input type="number" id="searchDay" placeholder="რიცხვი">
+<button onclick="searchByDay()">ძებნა რიცხვით</button>
+
+<div id="searchResult"></div>
 </section>
 
 <script>
-function getDays(month, year = new Date().getFullYear()) {
-  return new Date(year, month + 1, 0).getDate();
-}
-
+let data = JSON.parse(localStorage.getItem("shiftFull") || "{}");
 let currentMonth = 0;
-let data = JSON.parse(localStorage.getItem("scheduleData") || "{}");
 
-function initMonth() {
-  if (!data[currentMonth]) {
-    data[currentMonth] = {
-      nurses: [],
-      schedule: {},
-      real: {},
-      swaps: []
-    };
-  }
+function daysInMonth(m){ return new Date(2025, m+1, 0).getDate(); }
+
+function initMonth(m){
+  if(!data[m]) data[m]={ nurses:[], schedule:{}, real:{} };
 }
 
-function save() {
-  localStorage.setItem("scheduleData", JSON.stringify(data));
-}
+function save(){ localStorage.setItem("shiftFull", JSON.stringify(data)); }
 
-function changeMonth() {
-  currentMonth = Number(month.value);
-  initMonth();
-  render();
-}
-
-function addNurse() {
+function addNurse(){
   const name = nurseName.value.trim();
-  if (!name) return;
+  if(!name) return;
   const id = Date.now();
-  data[currentMonth].nurses.push({ id, name });
-  data[currentMonth].schedule[id] = {};
-  data[currentMonth].real[id] = {};
-  nurseName.value = "";
-  save();
-  render();
-}
-
-function autoGenerate() {
-  const m = data[currentMonth];
-  m.nurses.forEach(n => {
-    const firstDay = Object.keys(m.schedule[n.id])[0] || 1;
-    const value = m.schedule[n.id][firstDay];
-    if (!value) return;
-    for (let d = Number(firstDay) + 4; d <= getDays(currentMonth); d += 4) {
-      if (!m.schedule[n.id][d]) {
-        m.schedule[n.id][d] = value;
-      }
-    }
-  });
-  save();
-  render();
-}
-
-function addAttendance() {
-  const id = attNurse.value;
-  const day = attDay.value;
-  const hours = Number(attHours.value);
-  if (!id || !day) return;
-  data[currentMonth].real[id][day] = hours;
-  save();
-  render();
-}
-
-function addSwap() {
-  const day = swapDay.value;
-  const from = swapFrom.value;
-  const to = swapTo.value;
-  const hours = Number(swapHours.value);
-  if (!day || !from || !to) return;
-
-  const planned = data[currentMonth].schedule[from][day] || 0;
-  data[currentMonth].schedule[from][day] = 0;
-  data[currentMonth].schedule[to][day] = planned;
-
-  data[currentMonth].real[from][day] = 0;
-  data[currentMonth].real[to][day] = hours;
-
-  const fromName = data[currentMonth].nurses.find(n => n.id == from)?.name;
-  const toName = data[currentMonth].nurses.find(n => n.id == to)?.name;
-
-  data[currentMonth].swaps.push(
-    `დღე ${day}: ${fromName} შეცვალა ${toName} (${hours} სთ)`
-  );
-
-  save();
-  render();
-}
-
-function sum(obj) {
-  return Object.values(obj || {}).reduce((a, b) => a + (b || 0), 0);
-}
-
-function render() {
-  initMonth();
-  const m = data[currentMonth];
-  let html = "<table><tr><th>ექთანი</th>";
-
-  for (let d = 1; d <= getDays(currentMonth); d++) {
-    html += `<th>${d}</th>`;
+  for(let m=0;m<12;m++){
+    initMonth(m);
+    data[m].nurses.push({id,name});
+    data[m].schedule[id]={};
+    data[m].real[id]={};
   }
+  nurseName.value="";
+  save(); render();
+}
 
-  html += "<th class='total-planned'>დაგეგმილი</th>";
-  html += "<th class='total-real'>რეალური</th></tr>";
+function render(){
+  currentMonth = Number(monthSelect.value);
+  initMonth(currentMonth);
+  const m = data[currentMonth];
+  let html="<table><tr><th>ექთანი</th>";
+  for(let d=1;d<=daysInMonth(currentMonth);d++) html+=`<th>${d}</th>`;
+  html+="</tr>";
 
-  m.nurses.forEach(n => {
-    html += `<tr><td>${n.name}</td>`;
-    for (let d = 1; d <= getDays(currentMonth); d++) {
-      const planned = m.schedule[n.id][d] || "";
-      html += `<td>
-        <select onchange="data[${currentMonth}].schedule[${n.id}][${d}] = Number(this.value); save(); render();">
-          <option value=""></option>
-          <option value="8" ${planned==8?"selected":""}>8</option>
-          <option value="16" ${planned==16?"selected":""}>16</option>
-          <option value="24" ${planned==24?"selected":""}>24</option>
-        </select>
-        <div class="real">${m.real[n.id][d] || ""}</div>
-      </td>`;
+  m.nurses.forEach(n=>{
+    html+=`<tr class="planned"><td>${n.name}</td>`;
+    for(let d=1;d<=daysInMonth(currentMonth);d++){
+      const v=m.schedule[n.id][d]||"";
+      html+=`<td>
+      <select onchange="data[${currentMonth}].schedule[${n.id}][${d}]=Number(this.value);save();render();">
+        <option value=""></option>
+        <option value="8" ${v==8?"selected":""}>8</option>
+        <option value="16" ${v==16?"selected":""}>16</option>
+        <option value="24" ${v==24?"selected":""}>24</option>
+      </select></td>`;
     }
-    html += `<td class='total-planned'>${sum(m.schedule[n.id])}</td>`;
-    html += `<td class='total-real'>${sum(m.real[n.id])}</td></tr>`;
+    html+="</tr>";
+
+    html+=`<tr class="real-row"><td>რეალური</td>`;
+    for(let d=1;d<=daysInMonth(currentMonth);d++){
+      html+=`<td class="real-cell">${m.real[n.id][d]||""}</td>`;
+    }
+    html+="</tr>";
   });
 
-  html += "</table>";
-  tableContainer.innerHTML = html;
+  html+="</table>";
+  tableContainer.innerHTML=html;
 
   attNurse.innerHTML =
   swapFrom.innerHTML =
   swapTo.innerHTML =
-    m.nurses.map(n => `<option value="${n.id}">${n.name}</option>`).join("");
-
-  swapHistory.innerHTML =
-    m.swaps.map(s => `<li>${s}</li>`).join("");
+    m.nurses.map(n=>`<option value="${n.id}">${n.name}</option>`).join("");
 }
 
-initMonth();
-render();
-</script>
+function addAttendance(){
+  const n=attNurse.value;
+  const m=Number(attMonth.value)-1;
+  const d=attDay.value;
+  const h=Number(attHours.value);
+  if(!data[m]) initMonth(m);
+  data[m].real[n][d]=(data[m].real[n][d]||0)+h;
+  save(); render();
+}
 
-</body>
-</html>
+function addSwap(){
+  const f=swapFrom.value, t=swapTo.value;
+  const fm=fromMonth.value-1, tm=toMonth.value-1;
+  const fd=fromDay.value, td=toDay.value;
+  const h=Number(swapHours.value);
+
+  data[fm].schedule[f][fd]-=h;
+  data[tm].schedule[t][td]=(data[tm].schedule[t][td]||0)+h;
+
+  save(); render();
+}
+
+function searchByName(){
+  const name=searchName.value;
+  let res=[];
+  for(let m in data){
+    data[m].nurses.forEach(n=>{
+      if(n.name===name){
+        for(let d in data[m].schedule[n.id]){
+          res.push(`${Number(m)+1}/${d} – ${data[m].schedule[n.id][d]} სთ`);
+        }
+      }
+    });
+  }
+  searchResult.innerHTML=res.join("<br>");
+}
+
+function searchByDay(){
+  const m=searchMonth.value-1;
+  const d=searchDay.value;
+  let res=[];
+  data[m].nurses.forEach(n=>{
+    if(data[m].schedule[n.id][d])
+      res.push(`${n.name} – ${data[m].schedule[n.id][d
