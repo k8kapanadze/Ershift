@@ -1,4 +1,3 @@
-
 <html lang="ka">
 <head>
 <meta charset="UTF-8">
@@ -8,10 +7,8 @@
 body { font-family: sans-serif; padding: 20px; }
 table { border-collapse: collapse; width: 100%; margin-top: 20px; }
 th, td { border: 1px solid #555; padding: 4px; text-align: center; }
-
 .planned-row { background: #f5f5f5; }
 .real-row { background: #cfcfcf; font-weight: bold; color: #1b5e20; }
-
 section { margin-top: 25px; padding: 15px; border: 2px solid #333; }
 </style>
 </head>
@@ -58,12 +55,22 @@ section { margin-top: 25px; padding: 15px; border: 2px solid #333; }
 
 <script>
 const months = ["იანვარი","თებერვალი","მარტი","აპრილი","მაისი","ივნისი","ივლისი","აგვისტო","სექტემბერი","ოქტომბერი","ნოემბერი","დეკემბერი"];
-let data = JSON.parse(localStorage.getItem("nurseShiftData") || "{}");
+
+let data = JSON.parse(localStorage.getItem("nurseShiftData") || `{
+  "nurses": [],
+  "months": {}
+}`);
 
 function daysInMonth(m){ return new Date(2025, m+1, 0).getDate(); }
 
 function initMonth(m){
-  if(!data[m]) data[m] = { nurses:[], schedule:{}, real:{} };
+  if(!data.months[m]){
+    data.months[m] = { schedule:{}, real:{} };
+    data.nurses.forEach(n=>{
+      data.months[m].schedule[n.id] = {};
+      data.months[m].real[n.id] = {};
+    });
+  }
 }
 
 function save(){ localStorage.setItem("nurseShiftData", JSON.stringify(data)); }
@@ -72,26 +79,28 @@ function addNurse(){
   const name = nurseName.value.trim();
   if(!name) return;
   const id = Date.now();
+  data.nurses.push({id,name});
 
-  for(let m=0; m<12; m++){
+  for(let m=0;m<12;m++){
     initMonth(m);
-    data[m].nurses.push({id,name});
-    data[m].schedule[id] = {};
-    data[m].real[id] = {};
+    data.months[m].schedule[id] = {};
+    data.months[m].real[id] = {};
   }
+
   nurseName.value="";
-  save(); render();
+  save();
+  render();
 }
 
 function autoGenerate(){
   const m = Number(monthSelect.value);
   initMonth(m);
-  data[m].nurses.forEach(n=>{
-    const firstDay = Object.keys(data[m].schedule[n.id])[0];
+  data.nurses.forEach(n=>{
+    const firstDay = Object.keys(data.months[m].schedule[n.id])[0];
     if(!firstDay) return;
-    const val = data[m].schedule[n.id][firstDay];
+    const val = data.months[m].schedule[n.id][firstDay];
     for(let d=Number(firstDay)+4; d<=daysInMonth(m); d+=4){
-      data[m].schedule[n.id][d] = val;
+      data.months[m].schedule[n.id][d] = val;
     }
   });
   save(); render();
@@ -100,16 +109,17 @@ function autoGenerate(){
 function render(){
   const m = Number(monthSelect.value);
   initMonth(m);
+
   let html = "<table><tr><th>ექთანი</th>";
   for(let d=1; d<=daysInMonth(m); d++) html+=`<th>${d}</th>`;
   html+="</tr>";
 
-  data[m].nurses.forEach(n=>{
+  data.nurses.forEach(n=>{
     html+=`<tr class="planned-row"><td>${n.name}</td>`;
     for(let d=1; d<=daysInMonth(m); d++){
-      const v=data[m].schedule[n.id][d]||"";
+      const v=data.months[m].schedule[n.id][d]||"";
       html+=`<td>
-        <select onchange="data[${m}].schedule[${n.id}][${d}]=Number(this.value);save();render();">
+        <select onchange="data.months[${m}].schedule[${n.id}][${d}]=Number(this.value);save();render();">
           <option value=""></option>
           <option value="8" ${v==8?"selected":""}>8</option>
           <option value="16" ${v==16?"selected":""}>16</option>
@@ -121,7 +131,7 @@ function render(){
 
     html+=`<tr class="real-row"><td>რეალური</td>`;
     for(let d=1; d<=daysInMonth(m); d++){
-      html+=`<td>${data[m].real[n.id][d]||""}</td>`;
+      html+=`<td>${data.months[m].real[n.id][d]||""}</td>`;
     }
     html+="</tr>";
   });
@@ -129,7 +139,7 @@ function render(){
   html+="</table>";
   tableContainer.innerHTML = html;
 
-  attNurse.innerHTML = data[m].nurses.map(n=>`<option value="${n.id}">${n.name}</option>`).join("");
+  attNurse.innerHTML = data.nurses.map(n=>`<option value="${n.id}">${n.name}</option>`).join("");
   attMonth.innerHTML = months.map((mo,i)=>`<option value="${i}">${mo}</option>`).join("");
 }
 
@@ -139,7 +149,7 @@ function addAttendance(){
   const d=attDay.value;
   const h=Number(attHours.value);
   initMonth(m);
-  data[m].real[n][d]=(data[m].real[n][d]||0)+h;
+  data.months[m].real[n][d]=(data.months[m].real[n][d]||0)+h;
   save(); render();
 }
 
