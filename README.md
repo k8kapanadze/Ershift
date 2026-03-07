@@ -1,204 +1,295 @@
-
+<!DOCTYPE html>
 <html lang="ka">
+
 <head>
+
 <meta charset="UTF-8">
-<title>ექთნების მორიგეობა</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CMC Shift</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: sans-serif; padding:20px; }
-table { border-collapse: collapse; width:100%; margin-top:15px; }
-th, td { border:1px solid #555; padding:4px; text-align:center; }
 
-.planned-row { background:#f5f5f5; }
-.real-row { background:#d0d0d0; }
-
-.total-plan { background:#e6e6e6; font-weight:bold; }
-.total-real { background:#f2bcbc; color:darkred; font-weight:bold; }
-
-section { margin-top:25px; border:2px solid #333; padding:15px; }
-
-@media print {
-  button, input, select, section { display:none; }
+body{
+font-family:system-ui;
+margin:0;
+background:#f2f4f7;
 }
+
+header{
+background:#001f3f;
+color:white;
+padding:15px;
+font-size:18px;
+text-align:center;
+}
+
+.container{
+padding:15px;
+}
+
+.controls{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:15px;
+}
+
+input,select,button{
+padding:10px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:14px;
+}
+
+button{
+background:#001f3f;
+color:white;
+border:none;
+}
+
+.nurse-card{
+
+background:white;
+border-radius:12px;
+padding:15px;
+margin-bottom:15px;
+
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+
+}
+
+.nurse-title{
+font-weight:bold;
+font-size:16px;
+margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+}
+
+.days{
+
+display:flex;
+overflow-x:auto;
+gap:8px;
+
+}
+
+.day{
+
+min-width:70px;
+background:#f7f7f7;
+border-radius:8px;
+padding:6px;
+text-align:center;
+
+}
+
+.day select{
+
+width:100%;
+
+}
+
+.real{
+
+margin-top:5px;
+background:#eaf3ff;
+padding:5px;
+border-radius:6px;
+font-size:12px;
+cursor:pointer;
+
+}
+
+.weekend{
+background:#ffeaea;
+}
+
 </style>
+
 </head>
 
 <body>
 
-<h2>ექთნების მორიგეობის სისტემა</h2>
+<header>
+CMC Shift Manager
+</header>
 
-<select id="monthSelect"></select>
-<button onclick="window.print()">PDF ბეჭდვა / შენახვა</button>
+<div class="container">
 
-<br><br>
+<div class="controls">
 
-<input id="nurseName" placeholder="სახელი და გვარი">
-<button onclick="addNurse()">ექთნის დამატება</button>
-<button onclick="autoFill()">ყოველ მე-4 დღეზე შევსება</button>
+<input id="nurseInp" placeholder="ექთანის სახელი">
 
-<div id="tableContainer"></div>
+<button onclick="addNurse()">დამატება</button>
 
-<section>
-<h3>რეალურად შესრულებული საათების დაფიქსირება</h3>
-<select id="realNurse"></select>
-<select id="realMonth"></select>
-<input type="number" id="realDay" min="1" placeholder="რიცხვი">
-<select id="realHours">
-  <option value="8">8 სთ</option>
-  <option value="16">16 სთ</option>
-  <option value="24">24 სთ</option>
-</select>
-<button onclick="addReal()">დაფიქსირება</button>
-</section>
+<select id="month"></select>
 
-<section>
-<h3>ძებნა – სახელი + თვე</h3>
-<select id="searchNurse"></select>
-<select id="searchMonth"></select>
-<button onclick="searchByNurse()">ძებნა</button>
-<div id="result1"></div>
-</section>
+<input id="year" type="number">
 
-<section>
-<h3>ძებნა – თვე + რიცხვი</h3>
-<select id="searchMonth2"></select>
-<input type="number" id="searchDay" min="1" placeholder="რიცხვი">
-<button onclick="searchByDay()">ძებნა</button>
-<div id="result2"></div>
-</section>
+</div>
+
+<div id="app"></div>
+
+</div>
 
 <script>
-const months = ["იანვარი","თებერვალი","მარტი","აპრილი","მაისი","ივნისი","ივლისი","აგვისტო","სექტემბერი","ოქტომბერი","ნოემბერი","დეკემბერი"];
 
-let data = JSON.parse(localStorage.getItem("nurseSchedule") || `{
-  "nurses": [],
-  "months": {}
-}`);
+const firebaseConfig={
+apiKey:"YOURKEY",
+authDomain:"YOURDOMAIN",
+databaseURL:"YOURDB",
+projectId:"YOURID"
+};
 
-function save(){ localStorage.setItem("nurseSchedule", JSON.stringify(data)); }
+firebase.initializeApp(firebaseConfig);
 
-function daysInMonth(m){
-  return new Date(2025, m+1, 0).getDate();
-}
+const db=firebase.database();
 
-function initMonth(m){
-  if(!data.months[m]){
-    data.months[m] = { planned:{}, real:{} };
-    data.nurses.forEach(n=>{
-      data.months[m].planned[n.id] = {};
-      data.months[m].real[n.id] = {};
-    });
-  }
-}
+let nurses=[];
+let schedule={};
+
+const months=["იან","თებ","მარ","აპრ","მაი","ივნ","ივლ","აგვ","სექ","ოქტ","ნოე","დეკ"];
+
+const monthSelect=document.getElementById("month");
+
+months.forEach((m,i)=>{
+monthSelect.innerHTML+=`<option value="${i}">${m}</option>`;
+});
+
+monthSelect.value=new Date().getMonth();
+
+document.getElementById("year").value=new Date().getFullYear();
+
+db.ref().on("value",snap=>{
+
+const data=snap.val()||{};
+
+nurses=data.nurses||[];
+schedule=data.schedule||{};
+
+render();
+
+});
 
 function addNurse(){
-  const name = nurseName.value.trim();
-  if(!name) return;
-  const id = Date.now();
-  data.nurses.push({id,name});
-  Object.keys(data.months).forEach(m=>{
-    data.months[m].planned[id] = {};
-    data.months[m].real[id] = {};
-  });
-  nurseName.value="";
-  save(); render();
-}
 
-function autoFill(){
-  const m = monthSelect.value;
-  initMonth(m);
-  data.nurses.forEach(n=>{
-    const days = Object.keys(data.months[m].planned[n.id]);
-    if(days.length === 0) return;
-    const first = days[0];
-    const val = data.months[m].planned[n.id][first];
-    for(let d = +first + 4; d <= daysInMonth(m); d += 4){
-      data.months[m].planned[n.id][d] = val;
-    }
-  });
-  save(); render();
-}
+const name=document.getElementById("nurseInp").value.trim();
 
-function addReal(){
-  const m = realMonth.value;
-  const id = realNurse.value;
-  const d = realDay.value;
-  const h = Number(realHours.value);
-  if(!id || !d) return;
-  initMonth(m);
-  data.months[m].real[id][d] = h;
-  save(); render();
-}
+if(!name)return;
 
-function sum(o){
-  return Object.values(o||{}).reduce((a,b)=>a+(b||0),0);
+if(nurses.includes(name))return alert("არსებობს");
+
+nurses.push(name);
+
+db.ref("nurses").set(nurses);
+
+document.getElementById("nurseInp").value="";
+
 }
 
 function render(){
-  const m = monthSelect.value;
-  initMonth(m);
 
-  let html = "<table><tr><th>ექთანი</th>";
-  for(let d=1; d<=daysInMonth(m); d++) html+=`<th>${d}</th>`;
-  html += "<th>დაგეგმილი</th><th>რეალური</th></tr>";
+const m=parseInt(monthSelect.value);
+const y=parseInt(document.getElementById("year").value);
 
-  data.nurses.forEach(n=>{
-    html += `<tr class="planned-row"><td>${n.name}</td>`;
-    for(let d=1; d<=daysInMonth(m); d++){
-      const v = data.months[m].planned[n.id][d] || "";
-      html += `<td>
-        <select onchange="data.months[${m}].planned[${n.id}][${d}]=Number(this.value);save();render();">
-          <option></option>
-          <option value="8" ${v==8?"selected":""}>8</option>
-          <option value="16" ${v==16?"selected":""}>16</option>
-          <option value="24" ${v==24?"selected":""}>24</option>
-        </select>
-      </td>`;
-    }
-    html += `<td class="total-plan">${sum(data.months[m].planned[n.id])}</td>`;
-    html += `<td class="total-real">${sum(data.months[m].real[n.id])}</td></tr>`;
+const days=new Date(y,m+1,0).getDate();
 
-    html += `<tr class="real-row"><td>რეალური</td>`;
-    for(let d=1; d<=daysInMonth(m); d++){
-      html += `<td>${data.months[m].real[n.id][d] || ""}</td>`;
-    }
-    html += "<td></td><td></td></tr>";
-  });
+let html="";
 
-  html += "</table>";
-  tableContainer.innerHTML = html;
+nurses.forEach(n=>{
 
-  const nurseOptions = data.nurses.map(n=>`<option value="${n.id}">${n.name}</option>`).join("");
-  realNurse.innerHTML = searchNurse.innerHTML = nurseOptions;
+html+=`<div class="nurse-card">
+
+<div class="nurse-title">
+
+${n}
+
+<span onclick="deleteNurse('${n}')" style="cursor:pointer">❌</span>
+
+</div>
+
+<div class="days">`;
+
+for(let d=1;d<=days;d++){
+
+const key=`${y}-${m}-${n}`;
+
+const p=(schedule[key]&&schedule[key][d])||0;
+
+const wk=[0,6].includes(new Date(y,m,d).getDay())?"weekend":"";
+
+html+=`
+
+<div class="day ${wk}">
+
+<div>${d}</div>
+
+<select onchange="setPlan('${n}',${d},this.value)">
+
+<option value="0">-</option>
+<option value="8">8</option>
+<option value="16">16</option>
+<option value="24">24</option>
+
+</select>
+
+<div class="real" onclick="setReal('${n}',${d})">
+
+${p||"რეალური"}
+
+</div>
+
+</div>
+
+`;
+
 }
 
-function searchByNurse(){
-  const m = searchMonth.value;
-  const id = searchNurse.value;
-  initMonth(m);
-  const days = Object.keys(data.months[m].planned[id] || {});
-  result1.innerHTML = "მორიგეობის დღეები: " + (days.length ? days.join(", ") : "არ აქვს");
-}
+html+="</div></div>";
 
-function searchByDay(){
-  const m = searchMonth2.value;
-  const d = searchDay.value;
-  initMonth(m);
-  const res = data.nurses.filter(n=>data.months[m].planned[n.id][d]).map(n=>n.name);
-  result2.innerHTML = "იმ დღეს მორიგეა: " + (res.length ? res.join(", ") : "არავინ");
-}
-
-months.forEach((mo,i)=>{
-  monthSelect.innerHTML += `<option value="${i}">${mo}</option>`;
-  realMonth.innerHTML += `<option value="${i}">${mo}</option>`;
-  searchMonth.innerHTML += `<option value="${i}">${mo}</option>`;
-  searchMonth2.innerHTML += `<option value="${i}">${mo}</option>`;
 });
 
-monthSelect.value = new Date().getMonth();
-realMonth.value = monthSelect.value;
+document.getElementById("app").innerHTML=html;
 
-render();
+}
+
+function setPlan(n,d,v){
+
+const m=monthSelect.value;
+const y=document.getElementById("year").value;
+
+db.ref(`schedule/${y}-${m}-${n}/${d}`).set(parseInt(v));
+
+}
+
+function setReal(n,d){
+
+const val=prompt("რეალური საათი");
+
+if(!val)return;
+
+const m=monthSelect.value;
+const y=document.getElementById("year").value;
+
+db.ref(`schedule/${y}-${m}-${n}/${d}`).set(parseInt(val));
+
+}
+
+function deleteNurse(n){
+
+if(!confirm("წავშალოთ?"))return;
+
+nurses=nurses.filter(x=>x!==n);
+
+db.ref("nurses").set(nurses);
+
+}
+
 </script>
 
 </body>
