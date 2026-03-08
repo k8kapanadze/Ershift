@@ -2,17 +2,16 @@
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NurseFlow Elite - Mobile Glass</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NurseFlow Elite - Full Width</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass: rgba(255, 255, 255, 0.8);
+            --glass: rgba(255, 255, 255, 0.85);
             --glass-border: rgba(255, 255, 255, 0.5);
             --accent: #3b82f6;
-            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            --btn-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -21,11 +20,11 @@
             background: var(--bg-gradient);
             background-attachment: fixed;
             min-height: 100vh;
-            padding: 12px;
+            padding: 10px 0; /* ზედა/ქვედა დაშორება */
             color: #1e293b;
         }
 
-        .container { max-width: 480px; margin: 0 auto; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 0 10px; }
 
         /* Glass Cards */
         .glass-card {
@@ -35,7 +34,7 @@
             border: 1px solid var(--glass-border);
             border-radius: 20px;
             box-shadow: var(--shadow);
-            padding: 18px;
+            padding: 20px;
             margin-bottom: 15px;
         }
 
@@ -54,86 +53,99 @@
         label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-left: 4px; }
 
         input, select {
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.7);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 0.95rem;
+            padding: 12px;
+            font-size: 1rem;
             outline: none;
             color: #334155;
-            transition: all 0.3s;
+            width: 100%;
         }
-        input:focus, select:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-        /* Grid for controls */
         .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         /* Buttons 3D Style */
         .btn {
             border-radius: 12px;
             border: none;
-            padding: 12px;
+            padding: 14px;
             font-weight: 700;
             cursor: pointer;
             transition: 0.2s;
-            font-size: 0.85rem;
-            box-shadow: var(--btn-shadow);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
             width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         
         .btn-primary { background: #0f172a; color: white; }
         .btn-secondary { background: white; color: #1e293b; border: 1px solid var(--glass-border); }
-        .btn-danger { background: rgba(239, 68, 68, 0.08); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.1); box-shadow: none; }
+        .btn-danger { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; box-shadow: none; }
 
-        /* Table Design */
-        .table-card { padding: 0; overflow: hidden; border-radius: 20px; }
-        table { width: 100%; border-collapse: collapse; background: var(--glass); }
+        /* Full Width Table Card */
+        .table-card { 
+            padding: 0; /* მოხსნილია შიდა დაშორება */
+            overflow: hidden; 
+            border-radius: 20px; 
+            width: 100%;
+        }
+        
+        table { width: 100%; border-collapse: collapse; background: var(--glass); table-layout: fixed; }
         
         th { 
             background: #1e293b; 
             color: white; 
-            padding: 12px; 
-            font-size: 0.7rem; 
+            padding: 15px 5px; 
+            font-size: 0.75rem; 
             font-weight: 700; 
             text-transform: uppercase;
         }
         
-        td { padding: 8px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.03); }
+        td { padding: 12px 5px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.03); }
 
-        .day-cell { font-weight: 800; font-size: 0.85rem; color: #64748b; width: 45px; }
+        .day-cell { font-weight: 800; font-size: 0.95rem; color: #475569; width: 50px; }
 
         .plan-select {
-            width: 65px; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border);
-            background: rgba(255,255,255,0.5); font-weight: 700; text-align: center;
+            width: 85%; 
+            max-width: 80px;
+            padding: 8px; 
+            border-radius: 10px; 
+            border: 1px solid var(--glass-border);
+            background: #fff; 
+            font-weight: 800; 
+            text-align: center;
+            font-size: 1rem;
         }
 
         .real-cell {
-            background: rgba(59, 130, 246, 0.08);
+            background: rgba(59, 130, 246, 0.1);
             color: var(--accent);
             font-weight: 800;
             border-radius: 10px;
-            padding: 8px;
+            padding: 10px;
             cursor: pointer;
             display: inline-block;
-            min-width: 45px;
+            width: 85%;
+            max-width: 80px;
+            font-size: 1rem;
         }
 
         .totals-footer {
-            display: flex; justify-content: space-around; padding: 15px;
-            background: rgba(255,255,255,0.4); border-top: 1px solid var(--glass-border);
+            display: flex; justify-content: space-around; padding: 20px;
+            background: rgba(255,255,255,0.5); border-top: 1px solid var(--glass-border);
         }
         .total-item { text-align: center; }
-        .total-label { font-size: 0.6rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
-        .total-val { display: block; font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+        .total-label { font-size: 0.65rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
+        .total-val { display: block; font-size: 1.3rem; font-weight: 900; color: #0f172a; margin-top: 4px; }
 
-        /* Modal Journal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(10px); z-index: 1000; padding: 20px; }
-        .modal-content { background: white; max-width: 400px; margin: 40px auto; padding: 25px; border-radius: 24px; box-shadow: var(--shadow); }
-        textarea { width: 100%; border-radius: 14px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; margin: 15px 0; font-size: 1rem; outline: none; }
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(10px); z-index: 1000; padding: 20px; }
+        .modal-content { background: white; max-width: 450px; margin: 40px auto; padding: 25px; border-radius: 24px; box-shadow: var(--shadow); }
+        textarea { width: 100%; border-radius: 14px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; margin: 15px 0; font-size: 1.1rem; outline: none; }
 
-        @media print { .no-print { display: none !important; } }
+        @media print { .no-print { display: none !important; } .container { max-width: 100%; padding: 0; } }
     </style>
 </head>
 <body>
@@ -141,7 +153,6 @@
 <div class="container">
     <div class="glass-card no-print">
         <span class="section-title">პარამეტრები</span>
-        
         <div class="input-group">
             <label>ექთნის სახელი</label>
             <input type="text" id="nurseName" placeholder="სახელი და გვარი..." oninput="save()">
@@ -158,14 +169,13 @@
             </div>
         </div>
 
-        <div style="height: 1px; background: rgba(0,0,0,0.05); margin: 10px 0 15px 0;"></div>
+        <div style="height: 1px; background: rgba(0,0,0,0.05); margin: 10px 0 20px 0;"></div>
 
         <span class="section-title">რეალური საათების ჩაწერა</span>
-        
         <div class="control-grid">
             <div class="input-group">
                 <label>რიცხვი</label>
-                <input type="number" id="realDay" placeholder="1 - 31">
+                <input type="number" id="realDay" placeholder="1-31">
             </div>
             <div class="input-group">
                 <label>საათი</label>
@@ -173,7 +183,7 @@
                     <option value="24">24 სთ</option>
                     <option value="16">16 სთ</option>
                     <option value="8">8 სთ</option>
-                    <option value="0">0</option>
+                    <option value="0">0 (გაცდენა)</option>
                 </select>
             </div>
         </div>
@@ -188,9 +198,9 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50px;">#</th>
-                    <th>გეგმა</th>
-                    <th>რეალური</th>
+                    <th style="width: 20%;">#</th>
+                    <th style="width: 40%;">გეგმა</th>
+                    <th style="width: 40%;">რეალური</th>
                 </tr>
             </thead>
             <tbody id="bTable"></tbody>
@@ -198,11 +208,11 @@
         
         <div class="totals-footer">
             <div class="total-item">
-                <span class="total-label">გეგმა</span>
+                <span class="total-label">გეგმიური ჯამი</span>
                 <span id="totalPlan" class="total-val">0</span>
             </div>
             <div class="total-item">
-                <span class="total-label">ნამუშევარი</span>
+                <span class="total-label">ნამუშევარი სულ</span>
                 <span id="totalReal" class="total-val" style="color: var(--accent);">0</span>
             </div>
         </div>
@@ -211,18 +221,18 @@
 
 <div id="jModal" class="modal">
     <div class="modal-content">
-        <h3 id="jTitle" style="font-size: 1.1rem; font-weight: 700;"></h3>
-        <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">რა ისწავლეთ? / როგორ გაერთეთ?</p>
-        <textarea id="jText" rows="5" placeholder="ჩაწერეთ შენიშვნა..."></textarea>
+        <h3 id="jTitle" style="font-weight: 800;"></h3>
+        <p style="font-size: 0.9rem; color: #64748b; margin-top: 8px;">რა ისწავლეთ? / როგორ გაერთეთ?</p>
+        <textarea id="jText" rows="6"></textarea>
         <div style="display: flex; gap: 10px;">
-            <button class="btn btn-secondary" style="flex:1" onclick="closeM()">დახურვა</button>
-            <button class="btn btn-primary" style="flex:1; margin-bottom: 0;" onclick="saveJ()">შენახვა</button>
+            <button class="btn btn-secondary" style="flex:1; margin-bottom:0;" onclick="closeM()">გაუქმება</button>
+            <button class="btn btn-primary" style="flex:1; margin-bottom:0;" onclick="saveJ()">შენახვა</button>
         </div>
     </div>
 </div>
 
 <script>
-    let state = JSON.parse(localStorage.getItem('nurse_elite_v11')) || { name: "", shifts: {} };
+    let state = JSON.parse(localStorage.getItem('nurse_full_v12')) || { name: "", shifts: {} };
     const months = ["იანვარი", "თებერვალი", "მარტი", "აპრილი", "მაისი", "ივნისი", "ივლისი", "აგვისტო", "სექტემბერი", "ოქტომბერი", "ნოემბერი", "დეკემბერი"];
     let activeKey = null;
 
@@ -250,7 +260,7 @@
             const k = `d_${y}_${m}_${d}`;
             const pVal = state.shifts[k]?.plan || "";
             const rVal = state.shifts[k]?.real || "—";
-            const noteDot = state.shifts[k]?.note ? `<span style="width:5px;height:5px;background:#10b981;border-radius:50%;display:inline-block;margin-left:4px;"></span>` : "";
+            const noteDot = state.shifts[k]?.note ? `<span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;margin-left:4px;"></span>` : "";
 
             tPlan += parseInt(pVal) || 0;
             tReal += parseInt(rVal) || 0;
@@ -279,7 +289,7 @@
         const h = document.getElementById('realHours').value;
         const m = document.getElementById('mSelect').value;
         const y = document.getElementById('ySelect').value;
-        if(!d || d < 1 || d > 31) return alert("მიუთითეთ რიცხვი (1-31)");
+        if(!d || d < 1 || d > 31) return alert("მიუთითეთ რიცხვი");
         const k = `d_${y}_${m}_${d}`;
         if(!state.shifts[k]) state.shifts[k] = {};
         state.shifts[k].real = h;
@@ -320,7 +330,6 @@
                 c.setDate(c.getDate() + 4);
             }
             save(); render();
-            alert("გრაფიკი შეივსო 2030 წლის ბოლომდე!");
         } else {
             alert("ჯერ მონიშნეთ პირველი გეგმიური დღე ცხრილში!");
         }
@@ -330,7 +339,7 @@
     function openM(k, d) { activeKey = k; document.getElementById('jTitle').innerText = `${d} რიცხვის დღიური`; document.getElementById('jText').value = state.shifts[k]?.note || ""; document.getElementById('jModal').style.display='block'; }
     function saveJ() { if(!state.shifts[activeKey]) state.shifts[activeKey] = {}; state.shifts[activeKey].note = document.getElementById('jText').value; save(); render(); closeM(); }
     function closeM() { document.getElementById('jModal').style.display='none'; }
-    function save() { state.name = document.getElementById('nurseName').value; localStorage.setItem('nurse_elite_v11', JSON.stringify(state)); }
+    function save() { state.name = document.getElementById('nurseName').value; localStorage.setItem('nurse_full_v12', JSON.stringify(state)); }
 
     init();
 </script>
