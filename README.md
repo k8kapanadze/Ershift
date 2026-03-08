@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ექთნების მორიგეობის სისტემა</title>
+<title>Nurse Shift Manager</title>
 
 <style>
 
@@ -50,51 +50,23 @@ margin-top:10px;
 
 th,td{
 border:1px solid #eee;
-padding:5px;
+padding:6px;
 text-align:center;
 font-size:13px;
 }
 
-th.date{
-writing-mode:vertical-rl;
-transform:rotate(180deg);
-font-size:11px;
-padding:8px 2px;
+.day{
+background:#fafafa;
+font-weight:bold;
 }
 
-.plan{background:white;}
-.real{background:#f2f2f2;}
-
-.sum{
+.sumRow{
+background:#f2f2f2;
 font-weight:bold;
-background:#fafafa;
 }
 
 .menu{
 cursor:pointer;
-}
-
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
-}
-
-.modal-box{
-background:white;
-padding:20px;
-width:300px;
-margin:10% auto;
-border-radius:10px;
-}
-
-textarea{
-width:100%;
-margin-bottom:6px;
 }
 
 </style>
@@ -106,63 +78,27 @@ margin-bottom:6px;
 
 <h1>ექთნების მორიგეობა</h1>
 
-<input id="nurseInput" placeholder="ექთნის სახელი">
+<input id="nurseInput" placeholder="სახელი გვარი">
+
 <button onclick="addNurse()">დამატება</button>
 
 <select id="month"></select>
 <select id="year"></select>
 
-<button onclick="generate()">განახლება</button>
-<button onclick="autoFill()">მე-4 დღე</button>
+<button onclick="generate()">თვე</button>
+
+<button onclick="autoFillYear()">მე-4 დღე (წელი)</button>
 
 <button onclick="print()">ბეჭდვა</button>
 
 </header>
 
-
-<header>
-
-<select id="realNurse"></select>
-
-<input id="realDay" type="number" placeholder="დღე">
-
-<select id="realHours">
-<option>8</option>
-<option>16</option>
-<option>24</option>
-</select>
-
-<button onclick="setReal()">რეალური საათი</button>
-
-</header>
-
-
 <table id="table"></table>
-
-
-<div id="modal" class="modal">
-
-<div class="modal-box">
-
-<h3>დღის ჩანაწერი</h3>
-
-<textarea id="exp" placeholder="სამუშაო გამოცდილება"></textarea>
-<textarea id="note" placeholder="პირადი დღიური"></textarea>
-
-<button onclick="saveJournal()">შენახვა</button>
-<button onclick="closeModal()">დახურვა</button>
-
-</div>
-
-</div>
-
 
 <script>
 
 let nurses=JSON.parse(localStorage.nurses||"[]")
-let journal=JSON.parse(localStorage.journal||"{}")
-
-let activeCell=null
+let shifts=JSON.parse(localStorage.shifts||"{}")
 
 const month=document.getElementById("month")
 const year=document.getElementById("year")
@@ -176,18 +112,16 @@ year.innerHTML+=`<option value="${i}">${i}</option>`
 month.value=new Date().getMonth()+1
 year.value=new Date().getFullYear()
 
-
 function save(){
 
 localStorage.nurses=JSON.stringify(nurses)
-localStorage.journal=JSON.stringify(journal)
+localStorage.shifts=JSON.stringify(shifts)
 
 }
 
-
 function addNurse(){
 
-let name=document.getElementById("nurseInput").value.trim()
+let name=nurseInput.value.trim()
 
 if(!name)return
 
@@ -204,10 +138,9 @@ generate()
 
 }
 
-
 function removeNurse(name){
 
-if(confirm("წავშალო ექთანი?")){
+if(confirm("წავშალო?")){
 
 nurses=nurses.filter(n=>n!==name)
 
@@ -219,164 +152,141 @@ generate()
 
 }
 
-
 function generate(){
 
 let days=new Date(year.value,month.value,0).getDate()
 
-let html="<tr><th>ექთანი</th>"
-
-for(let d=1;d<=days;d++)
-html+=`<th class="date">${d}</th>`
-
-html+="<th>ჯამი</th></tr>"
+let html="<tr><th>დღე</th>"
 
 nurses.forEach(n=>{
+html+=`<th>${n} <span class="menu" onclick="removeNurse('${n}')">⋮</span></th>`
+})
 
-html+=`<tr class="plan">
-
-<td>${n}
-<span class="menu" onclick="removeNurse('${n}')">⋮</span>
-</td>`
+html+="</tr>"
 
 for(let d=1;d<=days;d++){
 
-html+=`<td>
+html+=`<tr><td class="day">${d}</td>`
 
-<select onchange="sumRow(this)">
-<option></option>
-<option>8</option>
-<option>16</option>
-<option>24</option>
+nurses.forEach((n,i)=>{
+
+let key=`${year.value}-${month.value}-${d}-${i}`
+
+let value=shifts[key]||""
+
+html+=`
+<td>
+
+<select onchange="saveShift(${d},${i},this.value)">
+
+<option value=""></option>
+<option value="8" ${value==8?"selected":""}>8</option>
+<option value="16" ${value==16?"selected":""}>16</option>
+<option value="24" ${value==24?"selected":""}>24</option>
+
 </select>
 
-</td>`
-
-}
-
-html+=`<td class="sum">0</td></tr>`
-
-
-html+=`<tr class="real">
-
-<td>რეალური</td>`
-
-for(let d=1;d<=days;d++){
-
-html+=`<td onclick="openJournal(this)"></td>`
-
-}
-
-html+=`<td class="sum">0</td></tr>`
+</td>
+`
 
 })
 
-document.getElementById("table").innerHTML=html
-
-document.getElementById("realNurse").innerHTML=
-nurses.map(n=>`<option>${n}</option>`).join("")
+html+="</tr>"
 
 }
 
+html+=`<tr class="sumRow"><td>ჯამი</td>`
 
-function sumRow(el){
-
-let row=el.closest("tr")
+nurses.forEach((n,i)=>{
 
 let sum=0
 
-row.querySelectorAll("select").forEach(s=>{
-sum+=Number(s.value||0)
-})
+Object.keys(shifts).forEach(k=>{
 
-row.querySelector(".sum").innerText=sum
+let parts=k.split("-")
 
-}
+if(parts[0]==year.value && parts[1]==month.value && parts[3]==i){
 
-
-function autoFill(){
-
-document.querySelectorAll(".plan").forEach(row=>{
-
-let selects=row.querySelectorAll("select")
-
-selects.forEach((s,i)=>{
-
-if(s.value){
-
-for(let j=i+4;j<selects.length;j+=4)
-selects[j].value=s.value
+sum+=Number(shifts[k])
 
 }
 
 })
 
-sumRow(selects[0])
+html+=`<td>${sum}</td>`
 
 })
 
-}
+html+="</tr>"
 
-
-function setReal(){
-
-let nurse=document.getElementById("realNurse").value
-let day=parseInt(document.getElementById("realDay").value)
-let hours=document.getElementById("realHours").value
-
-document.querySelectorAll(".plan").forEach(r=>{
-
-if(r.children[0].innerText.includes(nurse)){
-
-let real=r.nextElementSibling
-
-real.children[day].innerText=hours
+table.innerHTML=html
 
 }
 
-})
+function saveShift(day,index,value){
 
-}
+let key=`${year.value}-${month.value}-${day}-${index}`
 
-
-function openJournal(cell){
-
-activeCell=cell
-
-document.getElementById("modal").style.display="block"
-
-}
-
-
-function saveJournal(){
-
-journal[Date.now()]={
-exp:document.getElementById("exp").value,
-note:document.getElementById("note").value
-}
-
-activeCell.innerText="📝"
+if(value)shifts[key]=value
+else delete shifts[key]
 
 save()
 
-closeModal()
+generate()
 
 }
 
+function autoFillYear(){
 
-function closeModal(){
+let y=Number(year.value)
 
-document.getElementById("modal").style.display="none"
+nurses.forEach((n,i)=>{
+
+for(let m=1;m<=12;m++){
+
+let days=new Date(y,m,0).getDate()
+
+for(let d=1;d<=days;d++){
+
+let key=`${y}-${m}-${d}-${i}`
+
+if(shifts[key]){
+
+let val=shifts[key]
+
+for(let k=4;k<365;k+=4){
+
+let date=new Date(y,m-1,d)
+
+date.setDate(date.getDate()+k)
+
+if(date.getFullYear()!=y)break
+
+let nk=`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}-${i}`
+
+shifts[nk]=val
 
 }
 
+}
+
+}
+
+}
+
+})
+
+save()
+
+generate()
+
+}
 
 function print(){
 
 window.print()
 
 }
-
 
 generate()
 
